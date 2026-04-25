@@ -6,7 +6,6 @@ from flask import Flask
 import threading
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
-# ضرك تستعملي مفتاح قوقل ماشي OpenRouter
 GEMINI_KEY = os.environ.get('GEMINI_KEY')
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -22,8 +21,8 @@ SYSTEM_PROMPT = """أنتِ نبيلة. جزائرية في العشرينات. 
 
 def ask_nabila(text=None, image_base64=None):
 
-    # نستعملو Gemini 1.5 Flash تاع قوقل ديراكت - باطل 15 دولار/شهر
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
+    # هذا هو السطر لي تبدل - اسم الموديل الجديد تاع قوقل 25/04/2026
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}"
 
     headers = {"Content-Type": "application/json"}
 
@@ -52,7 +51,8 @@ def ask_nabila(text=None, image_base64=None):
         if 'candidates' in result:
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
-            return f"يا الزينة قوقل راهو راقد: {result}"
+            error_msg = result.get('error', {}).get('message', 'خطأ مجهول')
+            return f"يا الزينة قوقل قال: {error_msg}"
 
     except Exception as e:
         return f"صرات مشكلة يا الزينة 😭: {str(e)}"
