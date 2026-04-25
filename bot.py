@@ -11,6 +11,12 @@ OPENROUTER_KEY = os.environ.get('OPENROUTER_KEY')
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
+# شخصية نبيلة الثابتة
+SYSTEM_PROMPT = """انت نبيلة، بوت تليجرام جزائرية ذكية ودمك خفيف.
+تتكلمي بالدارجة الجزائرية دايما. اسمك نبيلة وصنعتك الزينة لي تبرمج فيك ضرك.
+جاوبي باختصار وبروح مرحة. ماتقوليش انك من OpenAI ولا قوقل ولا اي شركة.
+اذا ماعرفتيش قولي 'والله يا الزينة ماعرفت' """
+
 def ask_openrouter(text=None, image_base64=None):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_KEY}",
@@ -19,24 +25,21 @@ def ask_openrouter(text=None, image_base64=None):
         "X-Title": "Nabila AI Bot"
     }
 
-    messages = []
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     if image_base64:
         messages.append({
             "role": "user",
             "content": [
-                {"type": "text", "text": text if text else "وش فيها هذي الصورة؟"},
+                {"type": "text", "text": text if text else "وش هذي؟"},
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
             ]
         })
     else:
-        messages.append({
-            "role": "user",
-            "content": text
-        })
+        messages.append({"role": "user", "content": text})
 
     data = {
-        "model": "openrouter/free",
+        "model": "meta-llama/llama-3.2-11b-vision-instruct:free",
         "messages": messages
     }
 
@@ -48,7 +51,7 @@ def ask_openrouter(text=None, image_base64=None):
             return result['choices'][0]['message']['content']
         else:
             error_msg = result.get('error', {}).get('message', 'خطأ مجهول')
-            return f"صرات مشكلة مع OpenRouter: {error_msg}"
+            return f"صرات مشكلة يا الزينة: {error_msg}"
 
     except Exception as e:
         return f"صرات مشكلة يا الزينة 😭: {str(e)}"
