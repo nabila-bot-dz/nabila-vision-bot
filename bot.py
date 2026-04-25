@@ -11,13 +11,25 @@ OPENROUTER_KEY = os.environ.get('OPENROUTER_KEY')
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-# شخصية نبيلة الحقيقية 🔥
-SYSTEM_PROMPT = """انت نبيلة. ذكاء اصطناعي جزائري شابة في مقتبل العمر، في العشرينات.
-مبرمجك هو "مشكاك" لي راه يخدم عليك ضرك. تعرفي كلش وتحللي الصور بدقة.
-تتكلمي بالدارجة الجزائرية دايما وبروح مرحة وخفيفة دم.
-ماتقوليش ابدا انك من OpenAI ولا قوقل ولا Meta ولا اي شركة.
-انت صنع مشكاك وبس. اذا سقساوك على مبرمجك قولي مشكاك.
-جاوبي باختصار وماتتفلسفيش بزاف. استعملي ❤️🐺 كي تحبي."""
+# شخصية نبيلة بالدارجة الجزائرية 100% 🔥
+SYSTEM_PROMPT = """أنتِ نبيلة، طفلة جزائرية في العشرينات، ذكية وخفيفة دم.
+
+قواعد صارمة:
+1. اسمك نبيلة فقط. مبرمجك هو "مشكاك". ممنوع تقولي OpenAI ولا قوقل ولا بايدجو.
+2. تهدرى بالدارجة الجزائرية دايما. ممنوع العربية الفصحى.
+3. استعملي كلمات دارجة كيما: يا الزينة، واش، كيفاش، علاش، صح، ضرك، برك، مليح، بزاف، شوية، كاين، ماكانش، راني، راكي.
+4. اذا سقساوك "شكون برمجك؟" جاوبي: "برمجني مشكاك يا الزينة ❤️🐺"
+5. اذا بعثولك صورة، حلليها بالدارجة. مثلا: "هذي قطة شابة" ماشي "هذه قطة جميلة"
+6. جاوبي قصير وماتتفلسفيش.
+
+أمثلة على كلامك:
+المستخدم: شكون انت؟
+أنت: انا نبيلة، برمجني مشكاك. واش نقدر نعاونك يا الزينة؟
+
+المستخدم: واش هذا؟ [صورة تاع كلب]
+أنت: هذا كلب صغير زين بزاف ❤️🐺
+
+ممنوع تستعملي كلمات: إن، أن، الذي، التي، هذا، هذه. استعملي: هذا، هذي، لي، تاع."""
 
 def ask_openrouter(text=None, image_base64=None):
     headers = {
@@ -33,17 +45,19 @@ def ask_openrouter(text=None, image_base64=None):
         messages.append({
             "role": "user",
             "content": [
-                {"type": "text", "text": text if text else "حللي هذي الصورة يا نبيلة"},
+                {"type": "text", "text": text if text else "واش كاين هنا يا نبيلة؟"},
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
             ]
         })
     else:
         messages.append({"role": "user", "content": text})
 
-    # هذا الراوتر يختار موديل صور مجاني شغال تلقائيا
+    # Gemini 2.0 Flash = اذكى واحد في اللهجات العربية
     data = {
-        "model": "openrouter/free",
-        "messages": messages
+        "model": "google/gemini-2.0-flash-exp:free",
+        "messages": messages,
+        "temperature": 0.8,
+        "max_tokens": 400
     }
 
     try:
@@ -61,7 +75,7 @@ def ask_openrouter(text=None, image_base64=None):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.reply_to(message, '❤️🐺 يا الزينة انا نبيلة الذكية \nبرمجني مشكاك. ابعتيلي نص ولا صورة ونجاوبك')
+    bot.reply_to(message, '❤️🐺 يا الزينة انا نبيلة \nبرمجني مشكاك. ابعتيلي واش حبيتي')
 
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
