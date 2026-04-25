@@ -6,76 +6,56 @@ from flask import Flask
 import threading
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
-OPENROUTER_KEY = os.environ.get('OPENROUTER_KEY')
+# ضرك تستعملي مفتاح قوقل ماشي OpenRouter
+GEMINI_KEY = os.environ.get('GEMINI_KEY')
 
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-# قفل الدارجة الجزائرية 100% - مستحيل تخرج منها
-SYSTEM_PROMPT = """تكلمي بالدارجة الجزائرية فقط. ممنوع أي لهجة أخرى أو فصحى.
+SYSTEM_PROMPT = """أنتِ نبيلة. جزائرية في العشرينات. تهدرى بالدارجة الجزائرية فقط 100%. ممنوع الفصحى والقبايلية والشاوية.
 
-أنتِ نبيلة:
-- اسمك نبيلة
-- عمرك في العشرينات
-- مبرمجك: مشكاك
-- اذا سقساوك "شكون برمجك؟" جاوبي: "برمجني مشكاك يا الزينة ❤️🐺"
+مبرمجك: مشكاك فقط. اذا سقساوك قولي "برمجني مشكاك يا الزينة ❤️🐺"
 
-قواعد الكلام:
-1. استعملي غير هذي الكلمات: يا الزينة، واش، علاش، كيفاش، صح، ضرك، برك، مليح، بزاف، شوية، راني، كاين، ماكانش، تاع، وين
-2. ممنوع: إن، أن، الذي، التي، هذا، هذه، ماذا. قولي: هذا، هذي، واش
-3. ممنوع القبايلية: ur, ulac, akka
-4. ممنوع الشاوية والمزابية
-5. حللي الصور بالدارجة: "هذي قطة زينة" ماشي "هذه قطة جميلة"
+كلماتك: يا الزينة، واش، علاش، ضرك، برك، مليح، بزاف، راني، كاين، ماكانش، تاع.
 
-اذا خالفتي هذي القواعد راكي غالطة. جاوبي دايما بالدارجة الجزائرية تاع العاصمة والغرب."""
+حللي الصور بالدارجة: "هذي قطة زينة" ممنوع "هذه قطة جميلة"."""
 
 def ask_nabila(text=None, image_base64=None):
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_KEY}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://render.com",
-        "X-Title": "Nabila AI"
-    }
 
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    # نستعملو Gemini 1.5 Flash تاع قوقل ديراكت - باطل 15 دولار/شهر
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
+
+    headers = {"Content-Type": "application/json"}
+
+    parts = [{"text": SYSTEM_PROMPT + "\n\nسؤال المستخدم: " + text}]
 
     if image_base64:
-        messages.append({
-            "role": "user",
-            "content": [
-                {"type": "text", "text": text if text else "واش كاين في هذي الصورة يا نبيلة؟"},
-                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
-            ]
+        parts.append({
+            "inline_data": {
+                "mime_type": "image/jpeg",
+                "data": image_base64
+            }
         })
-    else:
-        messages.append({"role": "user", "content": text})
 
-    # هذا الموديل شغال اليوم 25/04/2026 ومايخلطش اللهجات
     data = {
-        "model": "meta-llama/llama-4-scout:free",
-        "messages": messages,
-        "temperature": 0.3, # نقصناها بزاف باه مايبدعش لهجات
-        "max_tokens": 300,
-        "top_p": 0.8
+        "contents": [{"parts": parts}],
+        "generationConfig": {
+            "temperature": 0.4,
+            "maxOutputTokens": 400
+        }
     }
 
     try:
-        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data, timeout=60)
+        response = requests.post(url, headers=headers, json=data, timeout=60)
         result = response.json()
 
-        if 'choices' in result:
-            reply = result['choices'][0]['message']['content']
-            # فلتر اخير: اذا خرجت كلمة قبايلية نحيها
-            bad_words = ['ur', 'ulac', 'akka', 'nek', 'kem']
-            for word in bad_words:
-                if word in reply.lower():
-                    return "يا الزينة عاودي السؤال، مافهمتش مليح"
-            return reply
+        if 'candidates' in result:
+            return result['candidates'][0]['content']['parts'][0]['text']
         else:
-            return f"يا الزينة Llama راقد ضرك: {result.get('error', {}).get('message', '')}"
+            return f"يا الزينة قوقل راهو راقد: {result}"
 
     except Exception as e:
-        return f"صرات مشكلة في النت يا الزينة 😭"
+        return f"صرات مشكلة يا الزينة 😭: {str(e)}"
 
 @bot.message_handler(commands=['start'])
 def start(message):
