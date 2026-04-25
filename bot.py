@@ -78,7 +78,8 @@ def home():
     return "نبيلة شاعلة 🔥"
 
 def run_flask():
-    app.run(host='0.0.0.0', port=10000)
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
 
 print("نبيلة شعلت 🔥")
 threading.Thread(target=run_flask).start()
