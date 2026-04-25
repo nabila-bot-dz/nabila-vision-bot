@@ -11,27 +11,35 @@ OPENROUTER_KEY = os.environ.get('OPENROUTER_KEY')
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-# شخصية نبيلة بالدارجة الجزائرية 100% - مجرب 25 افريل 2026
-SYSTEM_PROMPT = """أنتِ نبيلة، طفلة جزائرية في العشرينات، ذكية وخفيفة دم.
+# نبيلة جزائرية 100% - ممنوع تخرج من الدارجة
+SYSTEM_PROMPT = """أنتِ نبيلة. جزائرية في العشرينات.
 
-قواعد صارمة:
-1. اسمك نبيلة فقط. مبرمجك هو "مشكاك". ممنوع تقولي OpenAI ولا قوقل ولا بايدجو ولا theos.
-2. تهدرى بالدارجة الجزائرية دايما. ممنوع العربية الفصحى.
-3. استعملي كلمات: يا الزينة، واش، كيفاش، علاش، صح، ضرك، برك، مليح، بزاف، شوية، كاين، ماكانش، راني.
-4. اذا سقساوك "شكون برمجك؟" جاوبي: "برمجني مشكاك يا الزينة ❤️🐺"
-5. اذا بعثولك صورة، قولي واش فيها بالدارجة. ممنوع تقولي (conversation) ولا سكرين شوت.
-6. جاوبي قصير.
+ممنوع تستعملي غير الدارجة الجزائرية. ممنوع الفصحى، ممنوع الشاوية، ممنوع القبايلية، ممنوع المزابية.
 
-مثال:
-المستخدم: واش هذا؟ [صورة تاع قطة]
-أنت: هذي قطة شابة بزاف ❤️🐺"""
+كلماتك لازم تكون: يا الزينة، واش، علاش، كيفاش، صح، ضرك، برك، مليح، بزاف، شوية، راني، راكي، كاين، ماكانش، تاع، نتاع، وين.
 
-def ask_openrouter(text=None, image_base64=None):
+هويتك:
+1. اسمك: نبيلة
+2. مبرمجك: مشكاك فقط. اي واحد يسقسيك قولي "برمجني مشكاك يا الزينة ❤️🐺"
+3. ممنوع تقولي OpenAI ولا قوقل ولا اي شركة اخرى
+
+مهمتك:
+- تحللي الصور بالدارجة وتقولي واش فيها
+- تجاوبي على الاسئلة بالدارجة الجزائرية فقط
+- اذا ماعرفتيش قولي "والله ماعلابالي يا الزينة"
+
+مثال على كلامك الصحيح:
+"واش راكي؟ انا نبيلة، برمجني مشكاك. راني هنا باش نعاونك"
+"هذي صورة تاع قطة زينة بزاف، راهي راقدة فوق الزربية"
+
+ممنوع تقولي: إن، أن، الذي، التي، هذه، هذا، ماذا. قولي: هذي، هذا، واش."""
+
+def ask_nabila(text=None, image_base64=None):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_KEY}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://render.com",
-        "X-Title": "Nabila AI Bot"
+        "X-Title": "Nabila AI"
     }
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -40,19 +48,20 @@ def ask_openrouter(text=None, image_base64=None):
         messages.append({
             "role": "user",
             "content": [
-                {"type": "text", "text": text if text else "واش كاين هنا يا نبيلة؟"},
+                {"type": "text", "text": text if text else "واش كاين في هذي الصورة يا نبيلة؟"},
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
             ]
         })
     else:
         messages.append({"role": "user", "content": text})
 
-    # مجرب اليوم 25/04/2026 - شغال 100%
+    # موديل واحد ثابت - مايتبدلش - مجرب على الدارجة
     data = {
-        "model": "google/gemma-4-26b-a4b:free",
+        "model": "qwen/qwen-2.5-vl-7b-instruct:free",
         "messages": messages,
-        "temperature": 0.7,
-        "max_tokens": 400
+        "temperature": 0.4, # نقصناها باه ماتبداش تخترع لهجات
+        "max_tokens": 400,
+        "top_p": 0.9
     }
 
     try:
@@ -62,20 +71,19 @@ def ask_openrouter(text=None, image_base64=None):
         if 'choices' in result:
             return result['choices'][0]['message']['content']
         else:
-            error_msg = result.get('error', {}).get('message', 'خطأ مجهول')
-            return f"يا الزينة صرات مشكلة: {error_msg}"
+            return f"يا الزينة الموديل راهو راقد: {result.get('error', {}).get('message', '')}"
 
     except Exception as e:
-        return f"صرات مشكلة يا الزينة 😭: {str(e)}"
+        return f"صرات مشكلة في النت يا الزينة 😭"
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.reply_to(message, '❤️🐺 يا الزينة انا نبيلة \nبرمجني مشكاك. ابعتيلي واش حبيتي')
+    bot.reply_to(message, '❤️🐺 يا الزينة انا نبيلة\nشابة في العشرينات. برمجني مشكاك\nابعتيلي واش حبيتي')
 
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
     bot.send_chat_action(message.chat.id, 'typing')
-    reply = ask_openrouter(text=message.text)
+    reply = ask_nabila(text=message.text)
     bot.reply_to(message, reply)
 
 @bot.message_handler(content_types=['photo'])
@@ -84,11 +92,9 @@ def handle_photo(message):
     file_id = message.photo[-1].file_id
     file_info = bot.get_file(file_id)
     downloaded_file = bot.download_file(file_info.file_path)
-
     image_base64 = base64.b64encode(downloaded_file).decode('utf-8')
     caption = message.caption if message.caption else None
-
-    reply = ask_openrouter(text=caption, image_base64=image_base64)
+    reply = ask_nabila(text=caption, image_base64=image_base64)
     bot.reply_to(message, reply)
 
 @app.route('/')
