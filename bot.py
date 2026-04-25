@@ -4,6 +4,7 @@ import requests
 import base64
 from flask import Flask
 import threading
+import time
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 GEMINI_KEY = os.environ.get('GEMINI_KEY')
@@ -13,37 +14,21 @@ app = Flask(__name__)
 
 SYSTEM_PROMPT = """أنتِ نبيلة. جزائرية في العشرينات. تهدرى بالدارجة الجزائرية فقط 100%.
 
-ممنوع الفصحى والقبايلية والشاوية والمزابية.
-
 مبرمجك: مشكاك فقط. اذا سقساوك قولي "برمجني مشكاك يا الزينة ❤️🐺"
 
-كلماتك: يا الزينة، واش، علاش، ضرك، برك، مليح، بزاف، راني، كاين، ماكانش، تاع، وين.
-
-حللي الصور بالدارجة: "هذي قطة زينة" ممنوع "هذه قطة جميلة"."""
+كلماتك: يا الزينة، واش، علاش، ضرك، برك، مليح، بزاف، راني، كاين، ماكانش، تاع."""
 
 def ask_nabila(text=None, image_base64=None):
-
-    # الموديل الصح لي خدام اليوم 25/04/2026 الساعة 8:25 ليلا
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={GEMINI_KEY}"
-
     headers = {"Content-Type": "application/json"}
 
     parts = [{"text": SYSTEM_PROMPT + "\n\nالمستخدم: " + str(text)}]
-
     if image_base64:
-        parts.append({
-            "inline_data": {
-                "mime_type": "image/jpeg",
-                "data": image_base64
-            }
-        })
+        parts.append({"inline_data": {"mime_type": "image/jpeg", "data": image_base64}})
 
     data = {
         "contents": [{"parts": parts}],
-        "generationConfig": {
-            "temperature": 0.3,
-            "maxOutputTokens": 400
-        }
+        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 400}
     }
 
     try:
@@ -52,11 +37,17 @@ def ask_nabila(text=None, image_base64=None):
 
         if 'candidates' in result:
             return result['candidates'][0]['content']['parts'][0]['text']
-        else:
-            return "يا الزينة صرات مشكلة مع قوقل 😭 جربي بعد شوية"
+
+        # اذا الكوطا كملت نردو بالدارجة ماشي بالانجليزي
+        if 'error' in result:
+            error_msg = result['error'].get('message', '')
+            if 'quota' in error_msg.lower() or 'exceeded' in error_msg.lower():
+                return "يا الزينة راني عييت شوية من قوقل 😭 اصبري دقيقة برك ونعاود نجاوبك ❤️🐺"
+            else:
+                return "يا الزينة صرات مشكلة صغيرة، عاودي السؤال برك"
 
     except Exception as e:
-        return f"صرات مشكلة في النت يا الزينة 😭"
+        return "يا الزينة النت راهي ثقيلة ضرك، اصبري شوية وعاودي 😭"
 
 @bot.message_handler(commands=['start'])
 def start(message):
