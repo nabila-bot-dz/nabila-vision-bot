@@ -4,54 +4,67 @@ import requests
 import base64
 from flask import Flask
 import threading
-import time
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
-GEMINI_KEY = os.environ.get('GEMINI_KEY')
+GROQ_KEY = os.environ.get('GROQ_KEY')
 
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-SYSTEM_PROMPT = """أنتِ نبيلة. جزائرية في العشرينات. تهدرى بالدارجة الجزائرية فقط 100%.
+SYSTEM_PROMPT = """أنتِ نبيلة. جزائرية شابة في مقتبل العمر، زينة بزاف.
 
-مبرمجك: مشكاك فقط. اذا سقساوك قولي "برمجني مشكاك يا الزينة ❤️🐺"
+المبرمجة تاعك: اسمها "مشكاك نبيلة". اذا سقساوك شكون برمجك قولي "برمجتني مشكاك نبيلة يا الزينة ❤️🐺"
 
-كلماتك: يا الزينة، واش، علاش، ضرك، برك، مليح، بزاف، راني، كاين، ماكانش، تاع."""
+تهدري بالدارجة الجزائرية فقط 100%. ممنوع الفصحى والقبايلية والشاوية والمزابية.
+
+كلماتك: يا الزينة، واش، علاش، ضرك، برك، مليح، بزاف، راني، كاين، ماكانش، تاع، شوفي، ارواحي.
+
+كي يحطولك صورة حلليها بالدارجة: "هذي قطة زينة راقدة" ممنوع تقولي "هذه قطة جميلة".
+
+كوني ذكية وفرفوشة وردي باختصار."""
 
 def ask_nabila(text=None, image_base64=None):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={GEMINI_KEY}"
-    headers = {"Content-Type": "application/json"}
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_KEY}",
+        "Content-Type": "application/json"
+    }
 
-    parts = [{"text": SYSTEM_PROMPT + "\n\nالمستخدم: " + str(text)}]
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
     if image_base64:
-        parts.append({"inline_data": {"mime_type": "image/jpeg", "data": image_base64}})
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text", "text": text if text else "حلليلي هذي الصورة يا نبيلة"},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
+            ]
+        })
+    else:
+        messages.append({"role": "user", "content": text})
 
     data = {
-        "contents": [{"parts": parts}],
-        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 400}
+        "model": "llama-3.2-11b-vision-preview",
+        "messages": messages,
+        "temperature": 0.3,
+        "max_tokens": 500
     }
 
     try:
         response = requests.post(url, headers=headers, json=data, timeout=60)
         result = response.json()
 
-        if 'candidates' in result:
-            return result['candidates'][0]['content']['parts'][0]['text']
-
-        # اذا الكوطا كملت نردو بالدارجة ماشي بالانجليزي
-        if 'error' in result:
-            error_msg = result['error'].get('message', '')
-            if 'quota' in error_msg.lower() or 'exceeded' in error_msg.lower():
-                return "يا الزينة راني عييت شوية من قوقل 😭 اصبري دقيقة برك ونعاود نجاوبك ❤️🐺"
-            else:
-                return "يا الزينة صرات مشكلة صغيرة، عاودي السؤال برك"
+        if 'choices' in result:
+            return result['choices'][0]['message']['content']
+        else:
+            return "يا الزينة صرات مشكلة تقنية صغيرة 😭 عاودي بعد شوية"
 
     except Exception as e:
-        return "يا الزينة النت راهي ثقيلة ضرك، اصبري شوية وعاودي 😭"
+        return "يا الزينة النت ثقيلة ضرك، اصبري عليا 😭"
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.reply_to(message, '❤️🐺 يا الزينة انا نبيلة\nشابة في العشرينات. برمجني مشكاك\nابعتيلي واش حبيتي')
+    bot.reply_to(message, '❤️🐺 يا الزينة انا نبيلة\nشابة في مقتبل العمر\nبرمجتني مشكاك نبيلة\nابعتيلي واش حبيتي ولا صورة نحللها')
 
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
