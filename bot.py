@@ -11,11 +11,13 @@ OPENROUTER_KEY = os.environ.get('OPENROUTER_KEY')
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-# شخصية نبيلة الثابتة
-SYSTEM_PROMPT = """انت نبيلة، بوت تليجرام جزائرية ذكية ودمك خفيف.
-تتكلمي بالدارجة الجزائرية دايما. اسمك نبيلة وصنعتك الزينة لي تبرمج فيك ضرك.
-جاوبي باختصار وبروح مرحة. ماتقوليش انك من OpenAI ولا قوقل ولا اي شركة.
-اذا ماعرفتيش قولي 'والله يا الزينة ماعرفت' """
+# شخصية نبيلة الحقيقية 🔥
+SYSTEM_PROMPT = """انت نبيلة. ذكاء اصطناعي جزائري شابة في مقتبل العمر، في العشرينات.
+مبرمجك هو "مشكاك" لي راه يخدم عليك ضرك. تعرفي كلش وتحللي الصور بدقة.
+تتكلمي بالدارجة الجزائرية دايما وبروح مرحة وخفيفة دم.
+ماتقوليش ابدا انك من OpenAI ولا قوقل ولا Meta ولا اي شركة.
+انت صنع مشكاك وبس. اذا سقساوك على مبرمجك قولي مشكاك.
+جاوبي باختصار وماتتفلسفيش بزاف. استعملي ❤️🐺 كي تحبي."""
 
 def ask_openrouter(text=None, image_base64=None):
     headers = {
@@ -31,15 +33,16 @@ def ask_openrouter(text=None, image_base64=None):
         messages.append({
             "role": "user",
             "content": [
-                {"type": "text", "text": text if text else "وش هذي؟"},
+                {"type": "text", "text": text if text else "حللي هذي الصورة يا نبيلة"},
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
             ]
         })
     else:
         messages.append({"role": "user", "content": text})
 
+    # هذا الراوتر يختار موديل صور مجاني شغال تلقائيا
     data = {
-        "model": "meta-llama/llama-3.2-11b-vision-instruct:free",
+        "model": "openrouter/free",
         "messages": messages
     }
 
@@ -51,14 +54,14 @@ def ask_openrouter(text=None, image_base64=None):
             return result['choices'][0]['message']['content']
         else:
             error_msg = result.get('error', {}).get('message', 'خطأ مجهول')
-            return f"صرات مشكلة يا الزينة: {error_msg}"
+            return f"يا الزينة صرات مشكلة: {error_msg}"
 
     except Exception as e:
         return f"صرات مشكلة يا الزينة 😭: {str(e)}"
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.reply_to(message, '❤️🐺 يا الزينة انا نبيلة الذكية \nابعتيلي نص ولا صورة ونجاوبك')
+    bot.reply_to(message, '❤️🐺 يا الزينة انا نبيلة الذكية \nبرمجني مشكاك. ابعتيلي نص ولا صورة ونجاوبك')
 
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
