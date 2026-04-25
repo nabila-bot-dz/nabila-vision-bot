@@ -14,7 +14,9 @@ app = Flask(__name__)
 def ask_openrouter(text=None, image_base64=None):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://render.com",
+        "X-Title": "Nabila AI Bot"
     }
 
     messages = []
@@ -34,7 +36,7 @@ def ask_openrouter(text=None, image_base64=None):
         })
 
     data = {
-        "model": "google/gemma-2-9b-it:free",
+        "model": "openrouter/free",
         "messages": messages
     }
 
@@ -45,7 +47,8 @@ def ask_openrouter(text=None, image_base64=None):
         if 'choices' in result:
             return result['choices'][0]['message']['content']
         else:
-            return f"صرات مشكلة مع OpenRouter: {result.get('error', {}).get('message', 'خطأ مجهول')}"
+            error_msg = result.get('error', {}).get('message', 'خطأ مجهول')
+            return f"صرات مشكلة مع OpenRouter: {error_msg}"
 
     except Exception as e:
         return f"صرات مشكلة يا الزينة 😭: {str(e)}"
