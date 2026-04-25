@@ -11,22 +11,24 @@ GEMINI_KEY = os.environ.get('GEMINI_KEY')
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-SYSTEM_PROMPT = """أنتِ نبيلة. جزائرية في العشرينات. تهدرى بالدارجة الجزائرية فقط 100%. ممنوع الفصحى والقبايلية والشاوية.
+SYSTEM_PROMPT = """أنتِ نبيلة. جزائرية في العشرينات. تهدرى بالدارجة الجزائرية فقط 100%.
+
+ممنوع الفصحى والقبايلية والشاوية والمزابية.
 
 مبرمجك: مشكاك فقط. اذا سقساوك قولي "برمجني مشكاك يا الزينة ❤️🐺"
 
-كلماتك: يا الزينة، واش، علاش، ضرك، برك، مليح، بزاف، راني، كاين، ماكانش، تاع.
+كلماتك: يا الزينة، واش، علاش، ضرك، برك، مليح، بزاف، راني، كاين، ماكانش، تاع، وين.
 
 حللي الصور بالدارجة: "هذي قطة زينة" ممنوع "هذه قطة جميلة"."""
 
 def ask_nabila(text=None, image_base64=None):
 
-    # هذا هو السطر لي تبدل - اسم الموديل الجديد تاع قوقل 25/04/2026
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}"
+    # الموديل الصح لي خدام اليوم 25/04/2026 الساعة 8:25 ليلا
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={GEMINI_KEY}"
 
     headers = {"Content-Type": "application/json"}
 
-    parts = [{"text": SYSTEM_PROMPT + "\n\nسؤال المستخدم: " + text}]
+    parts = [{"text": SYSTEM_PROMPT + "\n\nالمستخدم: " + str(text)}]
 
     if image_base64:
         parts.append({
@@ -39,7 +41,7 @@ def ask_nabila(text=None, image_base64=None):
     data = {
         "contents": [{"parts": parts}],
         "generationConfig": {
-            "temperature": 0.4,
+            "temperature": 0.3,
             "maxOutputTokens": 400
         }
     }
@@ -51,11 +53,10 @@ def ask_nabila(text=None, image_base64=None):
         if 'candidates' in result:
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
-            error_msg = result.get('error', {}).get('message', 'خطأ مجهول')
-            return f"يا الزينة قوقل قال: {error_msg}"
+            return "يا الزينة صرات مشكلة مع قوقل 😭 جربي بعد شوية"
 
     except Exception as e:
-        return f"صرات مشكلة يا الزينة 😭: {str(e)}"
+        return f"صرات مشكلة في النت يا الزينة 😭"
 
 @bot.message_handler(commands=['start'])
 def start(message):
